@@ -1,0 +1,9 @@
+service,environment,duration_seconds
+api-gateway,staging,42
+api-gateway,production,58
+auth-service,staging,31
+auth-service,production,44
+billing-worker,staging,96
+billing-worker,production,121
+search-indexer,staging,73
+search-indexer,production,88

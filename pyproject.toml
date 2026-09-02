@@ -1,0 +1,28 @@
+[project]
+name = "agent-charts"
+version = "0.1.0"
+description = "Agent-oriented chart generator: turn harvested session data into deterministic SVG, HTML, JSON, and Markdown charts"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0",
+]
+
+[project.scripts]
+chart-gen = "agent_charts.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/agent_charts"]

@@ -1,0 +1,62 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync --extra dev
+
+      - name: Compile every module
+        run: uv run python -m compileall -q src/agent_charts
+
+      - name: Test suite
+        run: uv run pytest tests/ -v
+
+      - name: Every form renders
+        run: |
+          failed=0
+          for form in $(uv run chart-gen forms); do
+            if ! uv run chart-gen chart --data examples/deploy-durations.csv \
+                --form "$form" --x service --y duration_seconds \
+                --out-dir /tmp/forms --name "$form" >/dev/null; then
+              echo "::error::form failed to render: $form"
+              failed=1
+            fi
+          done
+          exit $failed
+
+      - name: Output is deterministic
+        run: |
+          for dir in a b; do
+            uv run chart-gen chart --data examples/deploy-durations.csv \
+              --form bar --x service --y duration_seconds \
+              --out-dir "/tmp/$dir" --name c >/dev/null
+          done
+          diff /tmp/a/c.svg /tmp/b/c.svg
+
+      - name: Spec workflow
+        run: |
+          uv run chart-gen spec examples/release-health.yaml --validate-only
+          uv run chart-gen spec examples/release-health.yaml --out-dir /tmp/spec --html
+
+  container:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the image
+        run: ./scripts/build-container.sh
+      - name: Container checks
+        run: ./scripts/check-container.sh

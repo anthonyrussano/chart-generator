@@ -1,0 +1,40 @@
+# A dashboard spec: several charts, one shared data file, rendered together.
+# Top-level keys are defaults every chart inherits.
+title: Release health
+data: release-metrics.csv
+width: 720
+theme: auto
+
+charts:
+  # A KPI row: the headline numbers, as figures rather than a chart.
+  - name: headline
+    form: stat
+    x: metric
+    y: value
+    title: Release health
+    subtitle: Last 24 hours
+    rows:
+      - {metric: Requests, value: 128400, delta: 4.2, trend: "110,115,112,120,118,124,128"}
+      - {metric: Error rate, value: 0.42, delta: -0.11, trend: "0.9,0.8,0.7,0.6,0.5,0.45,0.42"}
+      - {metric: p99 latency, value: 188, delta: -12, trend: "260,240,230,210,200,195,188"}
+
+  # Two measures, one shared axis. Never a second y axis.
+  - name: latency
+    form: line
+    x: minute
+    y: p50_ms,p99_ms
+    title: Request latency
+    subtitle: p50 and p99, 5-minute buckets
+    unit: ms
+    y_label: milliseconds
+    data: ../examples/request-latency.csv
+
+  # Magnitude across categories, longest first.
+  - name: deploys
+    form: bar
+    x: service
+    y: duration_seconds
+    series: environment
+    title: Deploy duration by service
+    unit: s
+    data: ../examples/deploy-durations.csv

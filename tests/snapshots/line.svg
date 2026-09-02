@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="420" viewBox="0 0 720 420" role="img" font-size="12">
+<title>Request latency</title>
+<desc>line chart, titled &quot;Request latency&quot;, with 2 series, values from 41ms to 195ms, across 3 minute values.</desc>
+<style>
+  text { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
+  .title { font-size: 15px; font-weight: 600; }
+  .subtitle { font-size: 12px; }
+  .axis-label { font-size: 11px; }
+  .tick { font-size: 11px; font-variant-numeric: tabular-nums; }
+  .value-label { font-size: 11px; font-weight: 500; }
+  .legend-label { font-size: 11px; }
+  .hero { font-size: 34px; font-weight: 600; }
+  .stat-label { font-size: 11px; }
+  .grid, .axis { stroke-width: 1; shape-rendering: crispEdges; }
+  .line-mark { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+  .ring { stroke-width: 2; }
+  .surface { fill: #fcfcfb; }
+  .ring { stroke: #fcfcfb; }
+  .grid { stroke: #e1e0d9; }
+  .axis { stroke: #c3c2b7; }
+  .ink { fill: #0b0b0b; }
+  .ink2 { fill: #52514e; }
+  .muted { fill: #898781; }
+  .deemph-fill { fill: #c3c2b7; }
+  .deemph-stroke { stroke: #c3c2b7; }
+  .positive { fill: #006300; }
+  .fill-s0 { fill: #2a78d6; }
+  .stroke-s0 { stroke: #2a78d6; }
+  .area-s0 { fill: #2a78d6; fill-opacity: 0.1; }
+  .fill-s1 { fill: #eb6834; }
+  .stroke-s1 { stroke: #eb6834; }
+  .area-s1 { fill: #eb6834; fill-opacity: 0.1; }
+  .fill-s2 { fill: #1baf7a; }
+  .stroke-s2 { stroke: #1baf7a; }
+  .area-s2 { fill: #1baf7a; fill-opacity: 0.1; }
+  .fill-s3 { fill: #eda100; }
+  .stroke-s3 { stroke: #eda100; }
+  .area-s3 { fill: #eda100; fill-opacity: 0.1; }
+  .fill-s4 { fill: #e87ba4; }
+  .stroke-s4 { stroke: #e87ba4; }
+  .area-s4 { fill: #e87ba4; fill-opacity: 0.1; }
+  .fill-s5 { fill: #008300; }
+  .stroke-s5 { stroke: #008300; }
+  .area-s5 { fill: #008300; fill-opacity: 0.1; }
+  .fill-s6 { fill: #4a3aa7; }
+  .stroke-s6 { stroke: #4a3aa7; }
+  .area-s6 { fill: #4a3aa7; fill-opacity: 0.1; }
+  .fill-s7 { fill: #e34948; }
+  .stroke-s7 { stroke: #e34948; }
+  .area-s7 { fill: #e34948; fill-opacity: 0.1; }
+  .fill-pos { fill: #d03b3b; }
+  .fill-neg { fill: #2a78d6; }
+  .fill-mid { fill: #f0efec; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+    .surface { fill: #1a1a19; }
+    .ring { stroke: #1a1a19; }
+    .grid { stroke: #2c2c2a; }
+    .axis { stroke: #383835; }
+    .ink { fill: #ffffff; }
+    .ink2 { fill: #c3c2b7; }
+    .muted { fill: #898781; }
+    .deemph-fill { fill: #52514e; }
+    .deemph-stroke { stroke: #52514e; }
+    .positive { fill: #0ca30c; }
+    .fill-s0 { fill: #3987e5; }
+    .stroke-s0 { stroke: #3987e5; }
+    .area-s0 { fill: #3987e5; fill-opacity: 0.1; }
+    .fill-s1 { fill: #d95926; }
+    .stroke-s1 { stroke: #d95926; }
+    .area-s1 { fill: #d95926; fill-opacity: 0.1; }
+    .fill-s2 { fill: #199e70; }
+    .stroke-s2 { stroke: #199e70; }
+    .area-s2 { fill: #199e70; fill-opacity: 0.1; }
+    .fill-s3 { fill: #c98500; }
+    .stroke-s3 { stroke: #c98500; }
+    .area-s3 { fill: #c98500; fill-opacity: 0.1; }
+    .fill-s4 { fill: #d55181; }
+    .stroke-s4 { stroke: #d55181; }
+    .area-s4 { fill: #d55181; fill-opacity: 0.1; }
+    .fill-s5 { fill: #008300; }
+    .stroke-s5 { stroke: #008300; }
+    .area-s5 { fill: #008300; fill-opacity: 0.1; }
+    .fill-s6 { fill: #9085e9; }
+    .stroke-s6 { stroke: #9085e9; }
+    .area-s6 { fill: #9085e9; fill-opacity: 0.1; }
+    .fill-s7 { fill: #e66767; }
+    .stroke-s7 { stroke: #e66767; }
+    .area-s7 { fill: #e66767; fill-opacity: 0.1; }
+    .fill-pos { fill: #e66767; }
+    .fill-neg { fill: #3987e5; }
+    .fill-mid { fill: #383835; }
+    }
+  }
+  :root[data-theme="dark"] {
+    .surface { fill: #1a1a19; }
+    .ring { stroke: #1a1a19; }
+    .grid { stroke: #2c2c2a; }
+    .axis { stroke: #383835; }
+    .ink { fill: #ffffff; }
+    .ink2 { fill: #c3c2b7; }
+    .muted { fill: #898781; }
+    .deemph-fill { fill: #52514e; }
+    .deemph-stroke { stroke: #52514e; }
+    .positive { fill: #0ca30c; }
+    .fill-s0 { fill: #3987e5; }
+    .stroke-s0 { stroke: #3987e5; }
+    .area-s0 { fill: #3987e5; fill-opacity: 0.1; }
+    .fill-s1 { fill: #d95926; }
+    .stroke-s1 { stroke: #d95926; }
+    .area-s1 { fill: #d95926; fill-opacity: 0.1; }
+    .fill-s2 { fill: #199e70; }
+    .stroke-s2 { stroke: #199e70; }
+    .area-s2 { fill: #199e70; fill-opacity: 0.1; }
+    .fill-s3 { fill: #c98500; }
+    .stroke-s3 { stroke: #c98500; }
+    .area-s3 { fill: #c98500; fill-opacity: 0.1; }
+    .fill-s4 { fill: #d55181; }
+    .stroke-s4 { stroke: #d55181; }
+    .area-s4 { fill: #d55181; fill-opacity: 0.1; }
+    .fill-s5 { fill: #008300; }
+    .stroke-s5 { stroke: #008300; }
+    .area-s5 { fill: #008300; fill-opacity: 0.1; }
+    .fill-s6 { fill: #9085e9; }
+    .stroke-s6 { stroke: #9085e9; }
+    .area-s6 { fill: #9085e9; fill-opacity: 0.1; }
+    .fill-s7 { fill: #e66767; }
+    .stroke-s7 { stroke: #e66767; }
+    .area-s7 { fill: #e66767; fill-opacity: 0.1; }
+    .fill-pos { fill: #e66767; }
+    .fill-neg { fill: #3987e5; }
+    .fill-mid { fill: #383835; }
+  }
+</style>
+<rect x="0" y="0" width="720" height="420" class="surface"/>
+<text x="16" y="31" class="title ink">Request latency</text>
+<rect x="16" y="45" width="10" height="10" rx="2" class="fill-s0"/>
+<text x="32" y="54" class="legend-label ink2">p50_ms</text>
+<rect x="88.28" y="45" width="10" height="10" rx="2" class="fill-s1"/>
+<text x="104.28" y="54" class="legend-label ink2">p99_ms</text>
+<line x1="62" y1="370" x2="658.1" y2="370" class="grid"/>
+<text x="54" y="374" class="tick muted" text-anchor="end">0</text>
+<line x1="62" y1="295.75" x2="658.1" y2="295.75" class="grid"/>
+<text x="54" y="299.75" class="tick muted" text-anchor="end">50</text>
+<line x1="62" y1="221.5" x2="658.1" y2="221.5" class="grid"/>
+<text x="54" y="225.5" class="tick muted" text-anchor="end">100</text>
+<line x1="62" y1="147.25" x2="658.1" y2="147.25" class="grid"/>
+<text x="54" y="151.25" class="tick muted" text-anchor="end">150</text>
+<line x1="62" y1="73" x2="658.1" y2="73" class="grid"/>
+<text x="54" y="77" class="tick muted" text-anchor="end">200</text>
+<line x1="62" y1="370" x2="658.1" y2="370" class="axis"/>
+<text x="161.35" y="386" class="tick muted" text-anchor="middle"><title>2026-09-02T09:00</title>09:00</text>
+<text x="360.05" y="386" class="tick muted" text-anchor="middle"><title>2026-09-02T09:05</title>09:05</text>
+<text x="558.75" y="386" class="tick muted" text-anchor="middle"><title>2026-09-02T09:10</title>09:10</text>
+<path d="M161.35,307.63L360.05,304.66L558.75,309.12" class="line-mark stroke-s0"/>
+<path d="M161.35,102.7L360.05,80.43L558.75,114.58" class="line-mark stroke-s1"/>
+<circle cx="558.75" cy="309.12" r="5" class="ring fill-s0"/>
+<circle cx="558.75" cy="309.12" r="4" class="fill-s0"><title>p50_ms - 2026-09-02T09:10: 41ms</title></circle>
+<circle cx="558.75" cy="114.58" r="5" class="ring fill-s1"/>
+<circle cx="558.75" cy="114.58" r="4" class="fill-s1"><title>p99_ms - 2026-09-02T09:10: 172ms</title></circle>
+<text x="566.75" y="118.58" class="value-label ink2">172ms</text>
+<text x="566.75" y="313.12" class="value-label ink2">41ms</text>
+<circle cx="161.35" cy="307.63" r="8" class="hover-target" fill="transparent" data-value="42"><title>p50_ms - 2026-09-02T09:00: 42ms</title></circle>
+<circle cx="360.05" cy="304.66" r="8" class="hover-target" fill="transparent" data-value="44"><title>p50_ms - 2026-09-02T09:05: 44ms</title></circle>
+<circle cx="558.75" cy="309.12" r="8" class="hover-target" fill="transparent" data-value="41"><title>p50_ms - 2026-09-02T09:10: 41ms</title></circle>
+<circle cx="161.35" cy="102.7" r="8" class="hover-target" fill="transparent" data-value="180"><title>p99_ms - 2026-09-02T09:00: 180ms</title></circle>
+<circle cx="360.05" cy="80.43" r="8" class="hover-target" fill="transparent" data-value="195"><title>p99_ms - 2026-09-02T09:05: 195ms</title></circle>
+<circle cx="558.75" cy="114.58" r="8" class="hover-target" fill="transparent" data-value="172"><title>p99_ms - 2026-09-02T09:10: 172ms</title></circle>
+</svg>

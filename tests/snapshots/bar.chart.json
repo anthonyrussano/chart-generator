@@ -1,0 +1,69 @@
+{
+  "spec": {
+    "form": "bar",
+    "title": "Deploy duration",
+    "subtitle": "staging versus production",
+    "x": "service",
+    "y": "duration_seconds",
+    "series": "environment",
+    "x_label": "",
+    "y_label": "",
+    "unit": "s",
+    "emphasize": null,
+    "theme": "auto",
+    "width": 720,
+    "height": 420
+  },
+  "metadata": {
+    "source": "test",
+    "origin": "<fixture>",
+    "row_count": 4,
+    "series_count": 2,
+    "x_column": "service",
+    "y_column": "duration_seconds",
+    "series_column": "environment"
+  },
+  "x_kind": "category",
+  "x_order": [
+    "api",
+    "auth"
+  ],
+  "series": [
+    {
+      "id": "staging",
+      "label": "staging",
+      "slot": 0,
+      "folded_from": null,
+      "points": [
+        {
+          "x": "api",
+          "y": 42.0,
+          "label": null
+        },
+        {
+          "x": "auth",
+          "y": 31.0,
+          "label": null
+        }
+      ]
+    },
+    {
+      "id": "production",
+      "label": "production",
+      "slot": 1,
+      "folded_from": null,
+      "points": [
+        {
+          "x": "api",
+          "y": 58.0,
+          "label": null
+        },
+        {
+          "x": "auth",
+          "y": 44.0,
+          "label": null
+        }
+      ]
+    }
+  ]
+}

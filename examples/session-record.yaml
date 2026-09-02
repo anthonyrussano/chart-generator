@@ -1,0 +1,16 @@
+# Charting what an agent recorded as it worked.
+#
+#   chart-gen record build step=compile seconds=42 status=ok
+#   chart-gen record build step=test    seconds=118 status=ok
+#   chart-gen record build step=package seconds=17 status=ok
+#   chart-gen spec examples/session-record.yaml
+#
+# The record is JSONL, so it is read like any other data file.
+form: bar
+data: ../output/records/build.jsonl
+x: step
+y: seconds
+title: Build step duration
+subtitle: Recorded during the session
+unit: s
+sort: desc
