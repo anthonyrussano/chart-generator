@@ -61,6 +61,7 @@ SORT_MODES = ("asc", "desc", "label", "label-desc")
 
 
 def _add_output_args(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--json", action="store_true", help="Emit one JSON result with output paths, counts, and blind spots")
     parser.add_argument("--out-dir", default="output", help="Output directory")
     parser.add_argument("--name", default="chart", help="Output base name")
     parser.add_argument("--html", action="store_true", help="Also write an interactive HTML page")
@@ -150,6 +151,7 @@ def build_parser() -> argparse.ArgumentParser:
     spec.add_argument("--out-dir", default="output", help="Output directory")
     spec.add_argument("--name", help="Override the output base name for a single-chart spec")
     spec.add_argument("--validate-only", action="store_true", help="Check the spec and exit")
+    spec.add_argument("--json", action="store_true", help="Emit one JSON result with output paths, counts, and blind spots")
     spec.add_argument("--html", action="store_true", help="Also write HTML pages")
     spec.add_argument("--png", action="store_true", help="Also rasterize to PNG")
     spec.add_argument("--png-width", type=int, default=1440)
@@ -317,6 +319,21 @@ def _report(written: list[Path], chart) -> None:
         print(f"  wrote {path}")
 
 
+def _result(written: list[Path], chart, name: str) -> dict:
+    """Stable output contract for callers; no parsing of human progress lines."""
+    report_path = next(path for path in written if path.name.endswith(".blindspots.json"))
+    points = [point for series in chart.series for point in series.points]
+    return {
+        "name": name,
+        "form": chart.spec.form,
+        "series_count": len(chart.series),
+        "point_count": len(points),
+        "missing_point_count": sum(point.y is None for point in points),
+        "files": [str(path) for path in written],
+        "blind_spots": json.loads(report_path.read_text(encoding="utf-8")),
+    }
+
+
 # --- commands -------------------------------------------------------------
 
 
@@ -331,7 +348,8 @@ def cmd_chart(args) -> int:
             print(format_advice(advice), file=sys.stderr)
             return 2
         form = advice.best.form
-        print(f"auto-form: {form} ({advice.best.reason})")
+        if not args.json:
+            print(f"auto-form: {form} ({advice.best.reason})")
         # Only take the heuristic's column hints where the caller left a gap.
         for key, value in advice.best.spec_hints.items():
             if value is not None and getattr(args, key, None) in (None, ""):
@@ -352,7 +370,10 @@ def cmd_chart(args) -> int:
         container_engine=args.container_engine,
         raster_image=args.raster_image,
     )
-    _report(written, chart)
+    if args.json:
+        print(json.dumps({"charts": [_result(written, chart, args.name)]}, indent=2, sort_keys=True))
+    else:
+        _report(written, chart)
     return 0
 
 
@@ -365,20 +386,30 @@ def cmd_spec(args) -> int:
             print(f"  - {problem}", file=sys.stderr)
         return 2
 
-    counts = spec_counts(payload)
-    print(f"spec: {args.spec_file}  " + "  ".join(f"{k}={v}" for k, v in counts.items()))
-    if args.validate_only:
-        print("spec is valid")
-        return 0
-
     base_dir = Path(args.spec_file).resolve().parent
     entries = chart_specs(payload)
-    out_dir = Path(args.out_dir)
-
+    prepared = []
     for index, entry in enumerate(entries):
-        dataset = dataset_for(entry, base_dir)
-        chart = resolve(dataset, to_chart_spec(entry))
         name = args.name if args.name and len(entries) == 1 else chart_name(entry, index)
+        try:
+            dataset = dataset_for(entry, base_dir)
+            chart = resolve(dataset, to_chart_spec(entry))
+            prepared.append((name, dataset, chart))
+        except (CollectorError, NormalizeError, SpecError) as exc:
+            problems.append(f"charts[{index}] ({name}): {exc}")
+    if problems:
+        raise SpecError("Data validation failed:\n  - " + "\n  - ".join(problems))
+
+    counts = spec_counts(payload)
+    if not args.json:
+        print(f"spec: {args.spec_file}  " + "  ".join(f"{k}={v}" for k, v in counts.items()))
+    if args.validate_only:
+        print(json.dumps({"valid": True, "counts": counts}, sort_keys=True) if args.json else "spec is valid")
+        return 0
+
+    out_dir = Path(args.out_dir)
+    results = []
+    for name, dataset, chart in prepared:
         written = _emit(
             chart, dataset,
             out_dir=out_dir,
@@ -391,7 +422,12 @@ def cmd_spec(args) -> int:
             container_engine=args.container_engine,
             raster_image=args.raster_image,
         )
-        _report(written, chart)
+        if args.json:
+            results.append(_result(written, chart, name))
+        else:
+            _report(written, chart)
+    if args.json:
+        print(json.dumps({"charts": results}, indent=2, sort_keys=True))
     return 0
 
 

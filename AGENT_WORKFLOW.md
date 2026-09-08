@@ -33,8 +33,8 @@ chart-gen recommend --data metrics.csv
 chart-gen recommend --data metrics.csv --json   # for programmatic use
 ```
 
-It prints the data's shape, a ranked list of forms with the reason for each, a
-runnable command for the best one, and cautions. It will tell you when the
+It prints the data's shape, a ranked list of forms with the reason for each,
+command hints (supply your data source in place of `...`), and cautions. It will tell you when the
 answer is **not a chart**:
 
 - one row -> a stat tile, not a one-bar bar chart
@@ -58,6 +58,24 @@ chart-gen chart --data metrics.csv --auto-form --name latency
 
 `--auto-form` only fills in what you left blank, so you can accept its form and
 still override a column.
+
+For automation, add `--json` to `chart` or `spec`. Parse stdout as one document;
+do not scrape the human progress lines. Each entry in `charts` contains `name`,
+`form`, `series_count`, `point_count`, `missing_point_count`, `files`, and
+`blind_spots`. Point counts describe the resolved chart after alignment and
+aggregation, including gaps; they are not source row counts. Paths are relative
+to the execution working directory unless `--out-dir` is absolute. With the
+container wrapper, `/workspace` corresponds to this checkout.
+
+```bash
+./scripts/run-container.sh chart --data examples/deploy-durations.csv \
+  --auto-form --json --name deploys
+```
+
+Successful JSON output has exit code 0. Input, validation, or rendering errors
+have exit code 2 with diagnostics on stderr; no success JSON is emitted.
+Use `recommend --json` separately when you also need the heuristic's reasons
+and cautions. Check `blind_spots.has_blind_spots` before accepting the render.
 
 ## 4. Read the blind spots
 
@@ -95,6 +113,13 @@ chart-gen spec dashboard.yaml --validate-only    # check before rendering
 chart-gen spec dashboard.yaml --html --out-dir output/
 chart-gen compare before.yaml after.yaml         # what changed between two specs
 ```
+
+Validation loads the referenced data relative to the spec and resolves each
+chart's columns, without writing outputs. It also rejects colliding output
+names. Rendering performs this preflight for the whole spec first, so a missing
+file or invalid column in a later chart does not leave a partial dashboard.
+This is not an atomic write guarantee: a subsequent rasterizer or filesystem
+failure can still leave outputs to inspect.
 
 ## Session recording
 

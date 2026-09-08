@@ -8,6 +8,7 @@ spot rather than silently coerced to zero.
 from __future__ import annotations
 
 import csv
+import io
 import json
 import re
 import sqlite3
@@ -104,11 +105,25 @@ def collect_from_csv(path: str | Path, delimiter: str = ",") -> DataSet:
         text = path.read_text(encoding="utf-8")
     except OSError as exc:
         raise CollectorError(f"csv: cannot read {path}: {exc}") from exc
-    reader = csv.DictReader(text.splitlines(), delimiter=delimiter)
+    return _collect_delimited(text, str(path), delimiter)
+
+
+def _collect_delimited(text: str, origin: str, delimiter: str = ",") -> DataSet:
+    reader = csv.DictReader(io.StringIO(text.lstrip("\ufeff")), delimiter=delimiter)
     if reader.fieldnames is None:
-        raise CollectorError(f"csv: {path} has no header row")
-    records = [dict(row) for row in reader]
-    return _dataset_from_records(records, "csv", str(path))
+        raise CollectorError(f"csv: {origin} has no header row")
+    if any(not name.strip() for name in reader.fieldnames):
+        raise CollectorError(f"csv: {origin} has an empty column name")
+    if len(set(reader.fieldnames)) != len(reader.fieldnames):
+        raise CollectorError(f"csv: {origin} has duplicate column names")
+    records = []
+    for row in reader:
+        if None in row:
+            raise CollectorError(
+                f"csv: {origin}:{reader.line_num} has more cells than the header"
+            )
+        records.append(dict(row))
+    return _dataset_from_records(records, "csv", origin)
 
 
 def collect_from_json(path: str | Path) -> DataSet:
@@ -128,6 +143,10 @@ def collect_from_jsonl(path: str | Path) -> DataSet:
     except OSError as exc:
         raise CollectorError(f"jsonl: cannot read {path}: {exc}") from exc
 
+    return _collect_jsonl(lines, str(path))
+
+
+def _collect_jsonl(lines: Iterable[str], origin: str) -> DataSet:
     records: list[dict[str, Any]] = []
     for number, line in enumerate(lines, start=1):
         line = line.strip()
@@ -136,11 +155,11 @@ def collect_from_jsonl(path: str | Path) -> DataSet:
         try:
             record = json.loads(line)
         except json.JSONDecodeError as exc:
-            raise CollectorError(f"jsonl: {path}:{number} is not valid JSON: {exc}") from exc
+            raise CollectorError(f"jsonl: {origin}:{number} is not valid JSON: {exc}") from exc
         if not isinstance(record, dict):
-            raise CollectorError(f"jsonl: {path}:{number} is not a JSON object")
+            raise CollectorError(f"jsonl: {origin}:{number} is not a JSON object")
         records.append(record)
-    return _dataset_from_records(records, "jsonl", str(path))
+    return _dataset_from_records(records, "jsonl", origin)
 
 
 def collect_from_yaml(path: str | Path) -> DataSet:
@@ -180,9 +199,20 @@ def collect_from_stdin(fmt: str = "auto") -> DataSet:
 
 
 def collect_from_text(text: str, fmt: str = "auto", origin: str = "<text>") -> DataSet:
+    text = text.lstrip("\ufeff")
     stripped = text.strip()
+    if not stripped:
+        raise CollectorError(f"{origin}: no data received")
     if fmt == "auto":
         fmt = "json" if stripped[:1] in "[{" else "csv"
+        if fmt == "json":
+            try:
+                json.loads(stripped)
+            except json.JSONDecodeError as exc:
+                # Only extra top-level objects suggest JSONL. Malformed JSON
+                # must still fail as JSON rather than being reinterpreted.
+                if exc.msg == "Extra data" and stripped.startswith("{"):
+                    fmt = "jsonl"
 
     if fmt == "json":
         try:
@@ -192,20 +222,18 @@ def collect_from_text(text: str, fmt: str = "auto", origin: str = "<text>") -> D
         return _dataset_from_records(_records_from_payload(payload, origin), "json", origin)
 
     if fmt == "jsonl":
-        records = []
-        for number, line in enumerate(stripped.splitlines(), start=1):
-            if not line.strip():
-                continue
-            try:
-                records.append(json.loads(line))
-            except json.JSONDecodeError as exc:
-                raise CollectorError(f"{origin}:{number} is not valid JSON: {exc}") from exc
-        return _dataset_from_records(records, "jsonl", origin)
+        return _collect_jsonl(text.splitlines(), origin)
 
-    reader = csv.DictReader(stripped.splitlines())
-    if reader.fieldnames is None:
-        raise CollectorError(f"{origin}: no header row")
-    return _dataset_from_records([dict(r) for r in reader], "csv", origin)
+    if fmt in ("yaml", "yml"):
+        try:
+            payload = yaml.safe_load(text)
+        except yaml.YAMLError as exc:
+            raise CollectorError(f"{origin}: not valid YAML: {exc}") from exc
+        return _dataset_from_records(_records_from_payload(payload, origin), "yaml", origin)
+
+    if fmt in ("csv", "tsv"):
+        return _collect_delimited(text, origin, "\t" if fmt == "tsv" else ",")
+    raise CollectorError(f"Unsupported text format '{fmt}'; use csv, tsv, json, jsonl, or yaml")
 
 
 def collect_from_inline(rows: list[dict[str, Any]]) -> DataSet:
@@ -287,7 +315,7 @@ def collect(path: str | Path, fmt: str = "auto", query: str | None = None) -> Da
         if not query:
             raise CollectorError("sqlite: --query is required")
         return collect_from_sqlite(path, query)
-    if fmt == "csv" and Path(path).suffix.lower() == ".tsv":
+    if fmt == "tsv" or (fmt == "csv" and Path(path).suffix.lower() == ".tsv"):
         return collect_from_csv(path, delimiter="\t")
     collector = COLLECTORS.get(fmt)
     if collector is None:

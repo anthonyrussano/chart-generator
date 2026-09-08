@@ -152,3 +152,44 @@ def test_inline_rows_require_objects():
 def test_unknown_suffix_names_the_supported_formats():
     with pytest.raises(CollectorError, match="Pass --format"):
         detect_format("data.xlsx")
+
+
+@pytest.mark.parametrize("fmt,text", [
+    ("jsonl", '{"name":"api","n":4}\n{"name":"auth","n":null}\n'),
+    ("yaml", '- name: api\n  n: 4\n- name: auth\n  n: null\n'),
+    ("tsv", 'name\tn\napi\t4\nauth\t\n'),
+])
+def test_text_and_file_collectors_agree(tmp_path, fmt, text):
+    path = tmp_path / f"data.{fmt}"
+    path.write_text(text)
+    assert collect_from_text(text, fmt=fmt).rows == collect(path).rows
+    assert collect_from_text(text, fmt=fmt).rows[1]["n"] is None
+
+
+def test_piped_jsonl_is_detected_automatically():
+    dataset = collect_from_text('{"n":1}\n\n{"n":2}\n')
+    assert dataset.metadata["source"] == "jsonl"
+    assert dataset.rows == [{"n": 1.0}, {"n": 2.0}]
+
+
+@pytest.mark.parametrize("text,fmt,message", [
+    ('{"n":1}\n[2]\n', "jsonl", r":2 is not a JSON object"),
+    ('\n{"n":1}\nnope', "jsonl", r":3 is not valid JSON"),
+    ('[{"n":1},]', "auto", "not valid JSON"),
+    ('n\n1\n', "typo", "Unsupported text format"),
+    ('   ', "auto", "no data received"),
+    ('n,n\n1,2\n', "csv", "duplicate column names"),
+    ('n,\n1,2\n', "csv", "empty column name"),
+    ('n\n1,2\n', "csv", "more cells than the header"),
+])
+def test_invalid_text_has_actionable_errors(text, fmt, message):
+    with pytest.raises(CollectorError, match=message):
+        collect_from_text(text, fmt=fmt)
+
+
+def test_csv_preserves_quoted_newlines_and_handles_bom(tmp_path):
+    text = '\ufeffname,n\n"api\nworker",4\nauth\n'
+    path = tmp_path / "data.csv"
+    path.write_text(text)
+    for dataset in (collect(path), collect_from_text(text)):
+        assert dataset.rows == [{"name": "api\nworker", "n": 4.0}, {"name": "auth", "n": None}]

@@ -33,11 +33,15 @@ run_in_container() {
                 --volume "${repo_root}:/workspace:Z" \
                 "${image_name}" "${@:2}"
             ;;
+        *)
+            echo "Unsupported container engine '${container_engine}'; use docker or podman." >&2
+            exit 1
+            ;;
     esac
 }
 
 echo "==> compile check"
-run_in_container python -m compileall -q /app/src
+run_in_container python -X pycache_prefix=/tmp/chart-gen-pycache -m compileall -q /app/src
 
 echo "==> test suite"
 run_in_container python -m pytest /workspace/tests -q

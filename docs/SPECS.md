@@ -58,7 +58,7 @@ charts:
 | `data` | Path to a csv/tsv/json/jsonl/yaml/sqlite file, relative to the spec |
 | `rows` | Records inline in the spec itself |
 | `source` | Alias for `data` |
-| `format` | Override format detection (`csv`, `json`, `jsonl`, `yaml`, `sqlite`) |
+| `format` | Override format detection (`csv`, `tsv`, `json`, `jsonl`, `yaml`, `sqlite`) |
 | `query` | SQL, required when the source is sqlite |
 
 ### Chart
@@ -96,7 +96,17 @@ ask for would change what the chart says.
 - a missing or unknown `form`, with the valid list
 - a chart with no data source
 - unknown keys (catches typos like `titel`)
-- wrong types on `width`, `height`, `top_n`
+- invalid inherited defaults, setting types, enums, or nonpositive dimensions
+- malformed inline rows or an empty chart list
+- output names that collide after slug conversion
+- unreadable data files and unresolved column references (data paths are relative to the spec)
+
+Validation reads data and resolves columns but does not render or write files.
+All charts undergo this same preflight before rendering starts. A successful
+validation does not check visual layout or PNG rasterizer availability.
+
+Add `--json` to validation for `{"valid": true, "counts": {...}}` on success.
+Errors use stderr and exit code 2, including in JSON mode.
 
 ```
 $ chart-gen spec broken.yaml --validate-only
@@ -125,3 +135,9 @@ output/latency.blindspots.md
 output/latency.html            # with --html
 output/latency.png             # with --png
 ```
+
+`chart-gen spec dashboard.yaml --json` emits one stdout document containing a
+`charts` array. Each entry includes the output name and form, series/point/gap
+counts, written file paths, and the complete blind spots report. The normal
+output files are still written. See [AGENT_WORKFLOW.md](../AGENT_WORKFLOW.md)
+for field names and path semantics.

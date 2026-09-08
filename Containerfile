@@ -39,7 +39,11 @@ WORKDIR /app
 # Dependency layer first, so source edits do not invalidate the install.
 COPY pyproject.toml uv.lock README.md ./
 COPY src ./src
-RUN uv sync --frozen --no-dev
+RUN --mount=type=secret,id=ca-bundle \
+    if [ -f /run/secrets/ca-bundle ]; then \
+        export SSL_CERT_FILE=/run/secrets/ca-bundle; \
+    fi; \
+    uv sync --frozen --extra dev
 
 # The workspace is mounted at runtime; outputs land there, not in the image.
 WORKDIR /workspace

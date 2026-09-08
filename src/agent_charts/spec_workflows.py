@@ -8,6 +8,7 @@ tool renders it, and the spec stays in the repo as the reviewable artifact.
 from __future__ import annotations
 
 import json
+import math
 from pathlib import Path
 from typing import Any
 
@@ -48,7 +49,7 @@ def load_spec(path: str | Path) -> dict[str, Any]:
 
 
 def validate_spec(payload: dict[str, Any]) -> list[str]:
-    """Return a list of problems. An empty list means the spec is renderable."""
+    """Validate structure and inherited settings; the CLI also checks data."""
     problems: list[str] = []
     charts = payload.get("charts")
 
@@ -58,17 +59,23 @@ def validate_spec(payload: dict[str, Any]) -> list[str]:
         problems.append("'charts' must be a list")
         return problems
 
+    if not charts:
+        return ["'charts' must contain at least one chart"]
+
     forms = set(available_forms())
+    shared = {k: v for k, v in payload.items() if k != "charts"} if "charts" in payload else {}
+    names: set[str] = set()
     for index, chart in enumerate(charts):
         where = f"charts[{index}]"
         if not isinstance(chart, dict):
             problems.append(f"{where} must be a mapping")
             continue
+        chart = {**shared, **chart}
 
         form = chart.get("form")
         if not form:
             problems.append(f"{where}: 'form' is required")
-        elif form not in forms:
+        elif not isinstance(form, str) or form not in forms:
             problems.append(
                 f"{where}: unknown form '{form}'. Choose one of: {', '.join(sorted(forms))}"
             )
@@ -86,8 +93,44 @@ def validate_spec(payload: dict[str, Any]) -> list[str]:
 
         for key in ("width", "height", "top_n"):
             value = chart.get(key)
-            if value is not None and not isinstance(value, int):
+            if value is not None and (isinstance(value, bool) or not isinstance(value, int)):
                 problems.append(f"{where}: '{key}' must be an integer")
+            elif value is not None and value <= 0:
+                problems.append(f"{where}: '{key}' must be positive")
+
+        for key in (
+            "title", "subtitle", "x", "y", "series", "x_label", "y_label",
+            "unit", "emphasize", "data", "source", "format", "query", "name",
+        ):
+            if key in chart and chart[key] is not None and not isinstance(chart[key], str):
+                problems.append(f"{where}: '{key}' must be a string")
+        for key, choices in {
+            "theme": ("auto", "light", "dark"),
+            "sort": ("asc", "desc", "label", "label-desc"),
+            "value_format": ("auto", "integer", "percent", "raw"),
+            "direct_labels": ("auto", "always", "never"),
+        }.items():
+            if key in chart and chart[key] is not None and chart[key] not in choices:
+                problems.append(f"{where}: '{key}' must be one of: {', '.join(choices)}")
+        for key in ("baseline", "target"):
+            value = chart.get(key)
+            if value is not None and (
+                isinstance(value, bool) or not isinstance(value, (int, float))
+                or not math.isfinite(value)
+            ):
+                problems.append(f"{where}: '{key}' must be a finite number")
+        if "options" in chart and not isinstance(chart["options"], dict):
+            problems.append(f"{where}: 'options' must be a mapping")
+        if "rows" in chart and chart["rows"] is not None and (
+            not isinstance(chart["rows"], list)
+            or not all(isinstance(row, dict) for row in chart["rows"])
+        ):
+            problems.append(f"{where}: 'rows' must be a list of objects")
+
+        name = chart_name(chart, index)
+        if name in names:
+            problems.append(f"{where}: duplicate output name '{name}'; set distinct 'name' values")
+        names.add(name)
 
     return problems
 

@@ -31,19 +31,42 @@ palette's relief rule requires it — see [Design rules](#design-rules-that-are-
 ## Quick start
 
 ```bash
-uv sync --extra dev
+./scripts/build-container.sh
 
 # Ask what form the data wants before drawing anything
-uv run chart-gen recommend --data examples/deploy-durations.csv
+./scripts/run-container.sh recommend --data examples/deploy-durations.csv
 
 # Draw it
-uv run chart-gen chart --data examples/deploy-durations.csv \
+./scripts/run-container.sh chart --data examples/deploy-durations.csv \
   --form bar --x service --y duration_seconds --series environment \
   --title "Deploy duration by service" --unit s --name deploys
 
 # Or let the heuristic pick the form and the columns
-uv run chart-gen chart --data examples/request-latency.csv --auto-form --name latency
+./scripts/run-container.sh chart --data examples/request-latency.csv --auto-form --name latency
 ```
+
+For a host-side inner loop, use `uv sync --extra dev` and replace the wrapper
+with `uv run chart-gen`. See [container setup](docs/CONTAINERS.md) for corporate
+CA bundles and required container validation.
+
+## Automation
+
+`chart` and `spec` accept `--json`: stdout becomes one JSON document containing
+output paths, series/point/gap counts, and the complete blind spots report for
+each chart. Errors go to stderr and return exit code 2.
+
+```bash
+./scripts/run-container.sh chart --data examples/deploy-durations.csv \
+  --auto-form --name deploys --html --png --json
+
+# Pipe JSONL directly; use --format yaml or --format tsv for those formats.
+./scripts/run-container.sh chart --stdin --auto-form --json < observations.jsonl
+```
+
+CSV, JSON, and JSONL are detected on stdin. Explicit input formats are checked;
+an unsupported format fails with an actionable error. Short CSV rows retain
+missing cells, while duplicate headers and extra cells are rejected to prevent
+silent data loss.
 
 ## Recording data during a session
 

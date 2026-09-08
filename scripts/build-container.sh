@@ -18,8 +18,18 @@ if [[ -z "${container_engine}" ]]; then
     fi
 fi
 
+build_args=()
+if [[ -n "${CHART_GEN_CA_BUNDLE:-}" ]]; then
+    if [[ ! -r "${CHART_GEN_CA_BUNDLE}" ]]; then
+        echo "Cannot read CHART_GEN_CA_BUNDLE: ${CHART_GEN_CA_BUNDLE}" >&2
+        exit 1
+    fi
+    build_args+=(--secret "id=ca-bundle,src=${CHART_GEN_CA_BUNDLE}")
+fi
+
 echo "Building ${image_name} with ${container_engine}..."
 exec "${container_engine}" build \
+    "${build_args[@]}" \
     --file "${repo_root}/Containerfile" \
     --tag "${image_name}" \
     "${repo_root}"

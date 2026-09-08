@@ -284,7 +284,8 @@ def recommend(dataset: DataSet) -> Advice:
                     else "Comparing magnitude across categories."
                 ),
                 "high",
-                {"x": primary, "y": value_column, "sort": "desc"},
+                {"x": primary, "y": value_column,
+                 **({"series": split} if split else {"sort": "desc"})},
             )
         )
 
@@ -296,7 +297,7 @@ def recommend(dataset: DataSet) -> Advice:
                     "Values fall on both sides of zero, so the job is polarity: "
                     "two hues that read as opposite, neutral at the baseline.",
                     "high",
-                    {"x": primary, "y": value_column},
+                    {"x": primary, "y": value_column, **({"series": split} if split else {})},
                 ),
             )
 

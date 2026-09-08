@@ -206,3 +206,62 @@ def test_blind_spots_are_written_even_for_clean_data(csv_file, tmp_path):
     ])
     report = json.loads((out / "d.blindspots.json").read_text())
     assert report["has_blind_spots"] is False
+
+
+def test_json_render_result_is_deterministic_and_lists_real_artifacts(csv_file, tmp_path, capsys):
+    args = ["chart", "--data", str(csv_file), "--auto-form", "--json",
+            "--out-dir", str(tmp_path / "out"), "--name", "deploys"]
+    assert main(args) == 0
+    first = capsys.readouterr().out
+    assert main(args) == 0
+    assert capsys.readouterr().out == first
+    result = json.loads(first)["charts"][0]
+    assert result["series_count"] == 2
+    assert result["point_count"] == 4
+    assert result["missing_point_count"] == 0
+    assert result["blind_spots"]["has_blind_spots"] is False
+    from pathlib import Path
+    assert len(result["files"]) == 5
+    assert all(Path(path).is_file() for path in result["files"])
+
+
+def test_json_render_reports_gaps_from_piped_data(tmp_path, monkeypatch, capsys):
+    import io
+    monkeypatch.setattr("sys.stdin", io.StringIO('name\tn\na\t1\nb\t\nc\t3\n'))
+    assert main(["chart", "--stdin", "--format", "tsv", "--form", "line",
+                 "--x", "name", "--y", "n", "--json", "--out-dir", str(tmp_path)]) == 0
+    result = json.loads(capsys.readouterr().out)["charts"][0]
+    assert result["point_count"] == 3
+    assert result["missing_point_count"] == 1
+    assert result["blind_spots"]["has_blind_spots"] is True
+    assert json.loads((tmp_path / "chart.chart.json").read_text())["series"][0]["points"][1]["y"] is None
+
+
+@pytest.mark.parametrize("validate_only", [False, True])
+def test_spec_preflights_all_sources_before_writing(tmp_path, capsys, validate_only):
+    spec = tmp_path / "s.yaml"
+    spec.write_text(
+        "form: bar\nx: name\ny: n\ncharts:\n"
+        "  - name: good\n    rows: [{name: a, n: 1}]\n"
+        "  - name: missing-file\n    data: absent.csv\n"
+        "  - name: bad-column\n    rows: [{name: a, n: 1}]\n    y: typo\n"
+    )
+    out = tmp_path / "out"
+    args = ["spec", str(spec), "--out-dir", str(out)]
+    assert main(args + (["--validate-only"] if validate_only else [])) == 2
+    error = capsys.readouterr().err
+    assert "absent.csv" in error and "typo" in error
+    assert not out.exists()
+
+
+def test_spec_json_is_one_document_for_multiple_charts(tmp_path, capsys):
+    spec = tmp_path / "s.yaml"
+    spec.write_text(
+        "form: bar\nrows: [{name: a, n: 1}, {name: b, n: 2}]\n"
+        "charts: [{name: one}, {name: two}]\n"
+    )
+    args = ["spec", str(spec), "--json", "--out-dir", str(tmp_path / "out")]
+    assert main(args + ["--validate-only"]) == 0
+    assert json.loads(capsys.readouterr().out)["valid"] is True
+    assert main(args) == 0
+    assert [c["name"] for c in json.loads(capsys.readouterr().out)["charts"]] == ["one", "two"]

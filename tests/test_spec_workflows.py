@@ -148,3 +148,31 @@ def test_compare_summary_is_written(tmp_path):
     text = write_compare_summary(diff, tmp_path / "c.md").read_text()
     assert "# Chart Spec Comparison" in text
     assert "`form`: 'bar' -> 'line'" in text
+
+
+def test_validation_uses_shared_form_and_checks_shared_settings():
+    payload = {"form": "bar", "rows": [{"a": 1}], "charts": [{"name": "a"}]}
+    assert validate_spec(payload) == []
+    payload["width"] = "wide"
+    payload["titel"] = "typo"
+    problems = validate_spec(payload)
+    assert any("'width' must be an integer" in p for p in problems)
+    assert any("unknown keys: titel" in p for p in problems)
+
+
+@pytest.mark.parametrize("key,value", [
+    ("width", True), ("height", 0), ("top_n", -1), ("theme", "dakr"),
+    ("options", []), ("rows", [1]), ("target", "100"), ("baseline", float("inf")),
+    ("x", ["a"]), ("data", 42), ("form", ["bar"]),
+])
+def test_invalid_setting_is_reported_without_crashing(key, value):
+    assert validate_spec({"form": "bar", "rows": [{"a": 1}], key: value})
+
+
+def test_validation_rejects_empty_dashboards_and_colliding_names():
+    assert validate_spec({"charts": []})
+    problems = validate_spec({"rows": [{"a": 1}], "charts": [
+        {"form": "bar", "name": "API latency"},
+        {"form": "line", "name": "api-latency"},
+    ]})
+    assert any("duplicate output name 'api-latency'" in p for p in problems)
